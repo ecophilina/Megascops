@@ -19,7 +19,6 @@ dat <- readRDS("data/WESO_with_landcover.rds")
 #   urban_mean = mean(urban, na.rm = TRUE),
 #   urban_sd = sd(urban, na.rm = TRUE),
 #   urban_scaled = (urban - urban_mean)/urban_sd)
-# saveRDS(dat, "data/WESO_with_landcover.rds")
 # dat <- dat %>% mutate(
 #   log_BADO = log(BADO_count +1),
 #   log_GHOW = log(GHOW_count +1),
@@ -71,11 +70,10 @@ hist(dat$count)
 
 # go straight to full model
 mf <- sdmTMB(count ~ 1 +
-               log_GHOW +
-               log_BADO +
-               # log_GHOW:log_BADO +
-               time_w_BADO +
-               # log_GHOW:time_w_BADO_scaled +
+               # log_GHOW * log_BADO * time_w_BADO +
+               log_GHOW + log_BADO + time_w_BADO +
+               log_GHOW:log_BADO +
+               log_GHOW:time_w_BADO +
                log_BADO:time_w_BADO +
                s(elev_scaled, k = 3) +
                urban +
@@ -95,11 +93,128 @@ mf <- sdmTMB(count ~ 1 +
              data = dat)
 mf <- run_extra_optimization(mf)
 
-sanity(mf)
+
+# try without svc
+
+mi <- sdmTMB(count ~ 1 +
+               # log_GHOW * log_BADO * time_w_BADO +
+               log_GHOW + log_BADO + time_w_BADO +
+               log_GHOW:log_BADO +
+               log_GHOW:time_w_BADO +
+               log_BADO:time_w_BADO +
+               s(elev_scaled, k = 3) +
+               urban +
+               urban:time_w_BADO +
+               forest +
+               forest:time_w_BADO +
+               year_scaled +
+               NDist_scaled +
+               Dist_scaled +
+               FCounters_scaled,
+             # spatial_varying = ~ 0 + year_scaled,
+             time = "year",
+             spatial = "on",
+             spatiotemporal = "iid",
+             share_range = FALSE,
+             family = delta_gamma(),
+             mesh = mesh,
+             data = dat)
+mi <- run_extra_optimization(mi)
+
+
+
+
+# slightly simplified model
+mf1 <- sdmTMB(count ~ 1 +
+               log_GHOW +
+               log_BADO +
+               # log_GHOW:log_BADO +
+               time_w_BADO +
+               log_GHOW:time_w_BADO +
+               log_BADO:time_w_BADO +
+               s(elev_scaled, k = 3) +
+               urban +
+               urban:time_w_BADO +
+               forest +
+               forest:time_w_BADO +
+               year_scaled +
+               NDist_scaled +
+               Dist_scaled +
+               FCounters_scaled,
+             spatial_varying = ~ 0 + year_scaled,
+             time = "year",
+             spatial = "on",
+             spatiotemporal = "off",
+             family = delta_gamma(),
+             mesh = mesh,
+             data = dat)
+mf1 <- run_extra_optimization(mf1)
+
+
+
+# slightly simplified model
+mf2 <- sdmTMB(count ~ 1 +
+               log_GHOW +
+               log_BADO +
+               # log_GHOW:log_BADO +
+               time_w_BADO +
+               # log_GHOW:time_w_BADO +
+               log_BADO:time_w_BADO +
+               s(elev_scaled, k = 3) +
+               urban +
+               urban:time_w_BADO +
+               forest +
+               forest:time_w_BADO +
+               year_scaled +
+               NDist_scaled +
+               Dist_scaled +
+               FCounters_scaled,
+             spatial_varying = ~ 0 + year_scaled,
+             time = "year",
+             spatial = "on",
+             spatiotemporal = "off",
+             family = delta_gamma(),
+             mesh = mesh,
+             data = dat)
+mf2 <- run_extra_optimization(mf2)
+
+
+mf3 <- sdmTMB(count ~ 1 +
+                log_GHOW +
+                log_BADO +
+                # log_GHOW:log_BADO +
+                time_w_BADO +
+                # log_GHOW:time_w_BADO +
+                log_BADO:time_w_BADO +
+                s(elev_scaled, k = 3) +
+                urban +
+                urban:time_w_BADO +
+                forest +
+                # forest:time_w_BADO +
+                year_scaled +
+                NDist_scaled +
+                Dist_scaled +
+                FCounters_scaled,
+              spatial_varying = ~ 0 + year_scaled,
+              time = "year",
+              spatial = "on",
+              spatiotemporal = "off",
+              family = delta_gamma(),
+              mesh = mesh,
+              data = dat)
+mf3 <- run_extra_optimization(mf3)
+
+
+AIC(mf, mf1, mf2, mf3)
+
+sanity(mf3)
 mf
 
 tidy(mf, "fixed", conf.int = T, model = 1)
-tidy(mf, "fixed", conf.int = T, model = 2)
+
+tidy(mf1, "fixed", conf.int = T, model = 2)
+tidy(mf2, "fixed", conf.int = T, model = 2)
+tidy(mf3, "fixed", conf.int = T, model = 2)
 
 
 response_desc1 <- "Probability WESO present"
@@ -112,13 +227,20 @@ visreg2d_delta(mf, "log_BADO", "time_w_BADO", scale = "response", model = 2,
                  xlab = "log(Barred Owl count +1)",
                  ylab = "Years since first Barred Owl")
 
+visreg2d_delta(mf3, "log_GHOW", "time_w_BADO", scale = "response", model = 2,
+               col = col_scheme ,
+               main = response_desc2 ,
+               xlab = "log(Great Horned Owl count +1)",
+               ylab = "Years since first Barred Owl")
+
+
 # visreg2d_delta(mf, "log_GHOW", "log_BADO", scale = "response", model = 2,
 #                col = col_scheme ,
 #                  main = response_desc ,
 #                  xlab = "log(Great Horned Owl count +1)",
 #                  ylab = "log(Barred Owl count +1)")
 
-visreg2d_delta(mf, "forest", "time_w_BADO", scale = "response", model = 2,
+visreg2d_delta(mf3, "forest", "time_w_BADO", scale = "response", model = 2,
                col = col_scheme ,
                main = response_desc2 ,
                  xlab = "Proportion forest",
@@ -166,7 +288,7 @@ tidy(mf, "ran_pars", conf.int = T, model = 2)
 
 
 saveRDS(mf, "data/WESO-delta-svc-time-full.rds")
-
+saveRDS(mf3, "data/WESO-delta-svc-time-top.rds")
 
 
 # check residuals
