@@ -10,17 +10,19 @@ library(sf)
 
 # choose spatial extent of analysis
 lon_min <- -125
-lon_max < -113
+lon_max <- -113
 lat_min <- 35
 lat_max <- 60
 
-# use Albers projection for X Y coordinates
+proj_crs <- 32610
+
+# or use Albers projection for X Y coordinates
 ## same as grid used in https://doi.org/10.1002/ecs2.2707
 ## https://github.com/tmeeha/inlaSVCBC
 # cbc_na_grid <- rgdal::readOGR(dsn="grid", layer="cbc_na_grid")
 # Albers <- raster::crs(cbc_na_grid)
 # CRS arguments:
-Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+# proj_crs <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
 
 
 #### --- get data ####
@@ -213,8 +215,8 @@ ggplot(b) +
   facet_wrap(~year) +
   theme_light()
 
-# get xy in albers to match grid and topo raster
-bxy <- b %>% sf::st_transform(crs = Albers) %>%
+# get xy in proj_crs to match grid and topo raster
+bxy <- b %>% sf::st_transform(crs = proj_crs) %>%
   sf::st_coordinates() %>%
   as.data.frame()
 b <- bind_cols(b, bxy)
@@ -226,7 +228,7 @@ bdat <- b %>%
   mutate(year = as.integer(year),
          year_f = as.factor(year),
          year_median = median(as.integer(unique(b$year))),
-         year_sd = sd(as.integer(unique(b$year))),
+         year_sd = 10,
          year_scaled = (year - year_median)/year_sd,
          BADO_sd = sd(sqrt(BADO_count)),
          BADO_mean = mean(sqrt(BADO_count)),
@@ -284,7 +286,7 @@ bdat <- bdat %>% group_by(LocID) %>% arrange(year) %>%
 
 # bdat <- readRDS("WESO_with_all_effort_filled_in.rds")
 
-
+# this has been redone with current proj_crs?
 rast_topo <- readRDS("data/rest_topo.rds")
 
 # 24.14 km radius

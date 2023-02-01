@@ -3,9 +3,12 @@
 library(marmap)
 
 lon_min <- -125
-lon_max < -113
+lon_max <- -113
 lat_min <- 35
 lat_max <- 60
+
+
+proj_crs <- 32610
 
 # use Albers projection for X Y coordinates
 ## same as grid used in https://doi.org/10.1002/ecs2.2707
@@ -14,7 +17,7 @@ lat_max <- 60
 # Albers <- raster::crs(cbc_na_grid)
 # CRS arguments:
 # projection to match grid
-Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+# Albers <- "+proj=aea +lat_0=40 +lon_0=-96 +lat_1=20 +lat_2=60 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
 
 # Download topo data and save on disk
 topo <- getNOAA.bathy(lon_min-4, lon_max+4,
@@ -33,7 +36,7 @@ rast_topo <- marmap::as.raster(topo)
 
 # change projection to match grid
 
-rast_topo <- raster::projectRaster(rast_topo, crs = Albers)
+rast_topo <- raster::projectRaster(rast_topo, crs = proj_crs)
 
 rast_topo[rast_topo < 0] <- NA
 
