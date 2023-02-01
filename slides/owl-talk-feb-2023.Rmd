@@ -1,0 +1,1012 @@
+---
+title: "Spatiotemporal modelling of Western Screech-Owl disappearances"
+subtitle: ""
+author: "Philina English"
+# institute: "Fisheries and Oceans Canada"
+date: "February 1 2023"
+output:
+  xaringan::moon_reader:
+    # self_contained: true
+    css: ["xaringan-themer.css", "theme.css"]
+    lib_dir: libs
+    nature:
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+<!-- Build with: xaringan::inf_mr() -->
+
+```{r preamble, include=FALSE, cache=FALSE}
+source(here::here("slides/preamble.R"))
+do.call(knitr::opts_chunk$set, knitr_opts)
+```
+
+```{r libs, include=FALSE}
+library(tidyverse)
+library(sdmTMB)
+library(sf)
+library(patchwork)
+```
+
+
+```{r load-model, include=FALSE}
+# model <- "data/WESO-presence-svc-time-no-st-final.rds"
+model <-"data/WESO-delta-svc-time-top.rds"
+m <- readRDS(here::here(model))
+proj_crs <- 32610
+response_desc1 <- "Probability present"
+response_desc2 <- "Abundance when present"
+col_scheme <- colorRampPalette(viridis::viridis(12))(5)
+```
+
+# Backstory
+
+<img src="images/with-ewpw.jpeg" width="400px" style="float:left"/>
+
+<img src="images/onsurvey.jpeg" width="371px"/>
+
+<img src="images/logo-sdmTMB.png" width="120px" style="float:right"/>
+
+---
+
+# What lessons did I take away from studying nightjar population declines?
+
+* Global insect declines now widely implicated in other species declines
+
+* Physical habitat isn't the whole story
+
+* Predator and competitor communities are also dynamic (e.g., invasions, range expansions)
+
+---
+
+# Barred Owl hypothesis for Western Screech-Owl disappearences 
+
+.small[
+Elliot, K. 2006. Declining numbers of Western Screech-Owl in the lower mainland of British Columbia. British Columbia Birds 14: 2-11.
+]
+
+* "declined earlier for those Christmas Bird Counts which showed an earlier increase in Barred Owls and for those which showed the greatest final number of Barred Owls" 
+
+* "detected more often in fragments of forest that were smaller than approximately 20 ha"
+
+---
+
+# The Christmas Bird Count (CBC)
+
+* North America’s longest-running Citizen Science project (started 1900)
+
+* $>$ 2000 locations throughout the Western Hemisphere participate each year
+
+* 24 kilometre diameter circles (~ 490 km2)
+
+* Annually between December 14 and January 5
+
+* All individuals of all species counted
+
+* Observer effort quantified (distance, hrs, time of day)
+
+---
+
+# Motivating question
+  
+Can CBC data tells us how widespread the impacts of Barred Owl range expansion are on Western Screech-Owls? 
+
+<img src="images//BADO_raw_counts.png" width="750px" style="float:right"/>
+
+---
+
+# Modelling approach using ***sdmTMB***
+
+* Use a wiggly/smoothed **random field** to account for spatial autocorrelation from variables missing from model 
+
+* Use a **spatially-varying trend** to estimate regional population change not accounted for by fixed effects in the model
+
+* Use a "hurdle" (aka. family = delta Gamma) model that separately models **probability of presence** and **abundance when present**. 
+
+* Checked for evidence of non-linear effects (using ***gams***)
+
+<img src="images/logo-sdmTMB.png" width="80px" style="float:right"/>
+
+---
+
+# Western Screech-Owl (WESO) detections on CBCs
+  
+<img src="images//WESO_raw_counts.png" width="750px" style="float:right"/>
+
+---
+# Fixed effects: *Covariates*
+
+* **Year** and **observer effort** variables (scaled) 
+
+* Mean **elevation** (scaled) 
+
+* Gobal maps describing the land surface into 22 classes by UN FAO Land Cover Classification System (LCCS):
+  * 300 m resolution
+  * Annual from **1992 to 2015**
+  * Proportion of count circle **urban** (190) and **forested** (50, 60, 61, 62, 70, 71, 72, 80, 81, 82, 90)
+
+* Model two time periods: 1992-2015 with landcover, 1982-2020 without
+
+---
+
+# Map landcover in 2015
+
+.center[
+<img src="images/WESO_forest_2015.png" width="350px" style="float:left"/>
+
+<img src="images/WESO_urban_2015.png" width="350px"/>
+]
+
+
+---
+
+# Fixed effects: *Owls and their interactions*
+
+* **Time with Barred Owls** (aka. years since first recorded on CBC)
+
+* **Barred Owl (BADO) count** (log scaled)
+      
+* **Great Horned Owl (GHOW) count** (log scaled)
+
+* All 2-way interactions between community variables
+
+  <!-- * BADO count x time present is most important (only significant for abundance) -->
+
+* Interactions between time with BADO and landcover
+
+  <!-- * time BADO present x urban cover important for both presence and abundance -->
+
+---
+
+# Map owl variables in 2015
+
+.center[
+<img src="images/WESO_time_w_BADO_2015.png" width="350px" style="float:left"/>
+
+<img src="images/WESO_GHOW_2015.png" width="350px"/>
+]
+
+---
+# Map owl variables in 2020
+
+.center[
+<img src="images/WESO_time_w_BADO_2020.png" width="350px" style="float:left"/>
+
+<img src="images/WESO_GHOW_2020.png" width="350px"/>
+]
+
+---
+# Predicted distribution of WESO in 2015 (model with landcover)
+
+.center[
+<img src="images/WESO_presence_w_landcover_top_2015_delta.png" width="350px" style="float:left"/>
+
+<img src="images/WESO_count_w_landcover_top_2015_delta.png" width="350px"/>
+]
+---
+
+# Predicted distribution of WESO in 2020 (model without landcover)
+
+.center[
+<img src="images/WESO_presence_no_landcover_top_2020_delta.png" width="350px" style="float:left"/>
+
+<img src="images/WESO_count_no_landcover_top_2020_delta.png" width="350px"/>
+]
+
+
+---
+background-image: url("images/WESO_zeta_adund_trend_w_landcover_top_2015_delta.png")
+background-position: bottom 50px right 50px
+background-size: 40%
+
+# Predicted WESO trend per decade 
+
+* a multiplicative effect
+
+---
+
+
+background-image: url("images/WESO_abudance_time_w_BADO_w_landcover_top_2015_delta.png")
+background-position: bottom 50px right 50px
+background-size: 40%
+
+# WESO abundance vs. time with BADO
+
+* estimates for 2015
+  
+* competes with spatial trend
+
+
+---
+
+background-image: url("images/WESO_abudance_time_w_BADO_no_landcover_top_2020_delta.png")
+background-position: bottom 50px right 50px
+background-size: 40%
+
+# WESO abundance vs. time with BADO
+
+
+* estimates for 2020
+  
+* competes with spatial trend
+
+
+
+---
+
+# Main effects: *Owl community*
+
+* Beware of significant interactions with BADO variables
+
+```{r effects3, fig.asp = 0.6, fig.width = 8}
+# conditional effects of time with barred owls ###
+ndt <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  year_scaled = 0,
+  time_w_BADO = seq(min(m$data$time_w_BADO),
+                    max(m$data$time_w_BADO), length.out = 30),
+  time_w_BADO_scaled = seq(min(m$data$time_w_BADO_scaled),
+                           max(m$data$time_w_BADO_scaled), length.out = 30),
+  log_GHOW = 0,
+  log_BADO = 0,
+  BADO_count = 0,
+  BADO_scaled = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+  urban = 0,
+  urban_scaled = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pt1 <- predict(m, newdata = ndt, se_fit = TRUE, re_form = NA)
+
+gt1 <- pt1 %>%
+    ggplot(., aes(
+      # total_BADO,
+      time_w_BADO,
+      # time_w_BADO_scaled * m$data$time_w_BADO_sd[1]+m$data$time_w_BADO_mean[1],
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se),
+      ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    ylab("Probability of presence") +
+    xlab("Years since first Barred Owl") +
+    scale_colour_viridis_c()+ ggsidekick::theme_sleek()
+
+
+# conditional effect of barred owl count ###
+ndb <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  year_scaled = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+  urban = 0,
+  urban_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = seq(0, max(m$data$log_BADO), length.out = 30),
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pb1 <- predict(m, newdata = ndb, se_fit = TRUE, re_form = NA)
+
+gb1 <- pb1 %>%
+    ggplot(., aes(
+      exp(log_BADO)-1,
+      # BADO_count,
+      # (BADO_scaled*m$data$BADO_sd[1]+1)^2,
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se), ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    scale_colour_viridis_c()+
+    xlab("Count of Barred Owls") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# conditional effect of GHOW owl count ###
+ndg <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  year_scaled = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+  urban = 0,
+  urban_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = seq(0, max(m$data$log_GHOW), length.out = 30),
+  log_BADO = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pg1 <- predict(m, newdata = ndg, se_fit = TRUE, re_form = NA)
+
+gg1 <- pg1 %>%
+    ggplot(., aes(
+      exp(log_GHOW)-1,
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se), ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    scale_colour_viridis_c()+
+    xlab("Count of Great Horned Owls") +
+    ggsidekick::theme_sleek() +
+    ylab("Probability of presence")
+    # theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# Model 2
+# conditional effects of time with barred owls ###
+
+pt2 <- predict(m, newdata = ndt, se_fit = TRUE, re_form = NA, model = 2)
+
+gt2 <- pt2 %>%
+    ggplot(., aes(
+      # total_BADO,
+      time_w_BADO,
+      # time_w_BADO_scaled * m$data$time_w_BADO_sd[1]+m$data$time_w_BADO_mean[1],
+      exp(est),
+      ymin = exp(est - 1.96 * est_se),
+      ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+       ylim(0,7.2)+
+    ylab("Abundance when present") +
+    xlab("Years since first Barred Owl") +
+    scale_colour_viridis_c()+ ggsidekick::theme_sleek()
+
+
+# conditional effect of barred owl count ###
+
+pb2 <- predict(m, newdata = ndb, se_fit = TRUE, re_form = NA, model = 2)
+
+gb2 <- pb2 %>%
+    ggplot(., aes(
+      exp(log_BADO)-1,
+      # BADO_count,
+      # (BADO_scaled*m$data$BADO_sd[1]+1)^2,
+      exp(est),
+      ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+       ylim(0,7.2)+
+    scale_colour_viridis_c()+
+    xlab("Count of Barred Owls") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# conditional effect of GHOW owl count ###
+pg2 <- predict(m, newdata = ndg, se_fit = TRUE, re_form = NA, model = 2)
+
+gg2 <- pg2 %>%
+    ggplot(., aes(
+      exp(log_GHOW)-1,
+      exp(est),
+      ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+         ylim(0,7.2)+
+    scale_colour_viridis_c()+
+    xlab("Count of Great Horned Owls") +
+    ggsidekick::theme_sleek() 
+    # theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+gt1 <- gt1 + theme(axis.title.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank() ) 
+gb1 <- gb1 + theme(axis.title.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank() ) 
+gg1x <- gg1 + theme(axis.title = element_blank(),axis.ticks = element_blank(),axis.text = element_blank() )
+gg2x <- gg2 + theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+gt1 + gb1 + gg1x + gt2 + gb2 + gg2x + patchwork::plot_layout(nrow = 2)
+```
+
+---
+
+<!-- ## BADO count over time  -->
+
+```{r , fig.show="hold", out.width="60%"}
+par(mar=c(1,4,3,3))
+visreg2d_delta(m, "time_w_BADO", "log_BADO", scale = "response", model = 1,
+               col = col_scheme,
+                 main = response_desc1,
+                 ylab = "log(Barred Owl count +1)",
+                 xlab = NULL)
+
+par(mar=c(4,4,3,3))
+visreg2d_delta(m, "time_w_BADO", "log_BADO", scale = "response", model = 2,
+               col = col_scheme,
+                 main = response_desc2,
+                 ylab = "log(Barred Owl count +1)",
+                 xlab = "Years since first Barred Owl")
+```
+
+---
+
+# Main effects: *Other covariates*
+
+* Beware of significant interaction involving urban
+
+```{r effects2, fig.asp = 0.6, fig.width = 8}
+
+# conditional effect of year
+ndy <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  urban = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  year_scaled = seq(min(m$data$year_scaled),
+                    max(m$data$year_scaled), length.out = 50),
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  BADO_count = 0,
+  BADO_scaled = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+py1 <- predict(m, newdata = ndy, se_fit = TRUE, re_form = NA)
+
+gy1 <- py1 %>%
+    ggplot(., aes(year_scaled*m$data$year_sd[1]+m$data$year_median[1],
+                  plogis(est),
+                  ymin = plogis(est - 1.96 * est_se),
+                  ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    ggsidekick::theme_sleek() +
+    # theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank()) +
+    ylab("Probability of presence") + xlab("Year")
+
+
+
+# conditional effect of forest ###
+ndf <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  year_scaled = 0,
+  elev_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  forest = seq(min(m$data$forest),
+              max(m$data$forest), length.out = 50),
+  urban = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  BADO_count = 0,
+  BADO_scaled = 0, BADO_scaled2 = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pf1 <- predict(m, newdata = ndf, se_fit = TRUE, re_form = NA)
+
+gf1 <- pf1 %>%
+    ggplot(., aes(
+      forest,
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se), ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    scale_colour_viridis_c()+
+    xlab("Proportion forest") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# conditional effect of urban ###
+ndu <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  year_scaled = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  urban = seq(min(m$data$urban),
+              max(m$data$urban), length.out = 50),
+  # urban_scaled = 0,
+  # BADO_count = 0,
+  # BADO_scaled = 0, BADO_scaled2 = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pu1 <- predict(m, newdata = ndu, se_fit = TRUE, re_form = NA)
+
+gu1 <- pu1 %>%
+    ggplot(., aes(
+      urban,
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se), ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    scale_colour_viridis_c()+
+    xlab("Proportion urban") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+
+# conditional effect of elevation
+nde <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  elev_scaled = seq(min(m$data$elev_scaled),
+                    max(m$data$elev_scaled), length.out = 50),
+  year_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  BADO_count = 0,
+  BADO_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+  urban = 0,
+  urban_scaled = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pe1 <- predict(m, newdata = nde, se_fit = TRUE, re_form = NA)
+
+ge1 <- pe1 %>%
+    ggplot(., aes(elev_scaled*m$data$elev_sd[1]+m$data$elev_mean[1],
+                  plogis(est),
+                  ymin = plogis(est - 1.96 * est_se),
+                  ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank()) +
+    xlab("Mean Elevation")
+
+
+#MODEL 2
+# conditional effect of year
+py2 <- predict(m, newdata = ndy, se_fit = TRUE, re_form = NA, model = 2)
+
+gy2 <- py2 %>%
+    ggplot(., aes(year_scaled*m$data$year_sd[1]+m$data$year_median[1],
+                  exp(est),
+                  ymin = exp(est - 1.96 * est_se),
+                  ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+       ylim(0,7.2)+
+    ggsidekick::theme_sleek() +
+    # theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank()) +
+    ylab("Abundance when present") + xlab("Year")
+
+
+
+# conditional effect of forest ###
+
+pf2 <- predict(m, newdata = ndf, se_fit = TRUE, re_form = NA, model = 2)
+
+gf2 <- pf2 %>%
+    ggplot(., aes(
+      forest,
+      exp(est),
+      ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+       ylim(0,7.2)+
+    scale_colour_viridis_c()+
+    xlab("Proportion forest") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# conditional effect of urban ###
+pu2 <- predict(m, newdata = ndu, se_fit = TRUE, re_form = NA, model = 2)
+
+gu2 <- pu2 %>%
+    ggplot(., aes(
+      urban,
+      exp(est),
+      ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+       ylim(0,7.2)+
+    scale_colour_viridis_c()+
+    xlab("Proportion urban") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+
+# conditional effect of elevation
+
+pe2 <- predict(m, newdata = nde, se_fit = TRUE, re_form = NA, model = 2)
+
+ge2 <- pe2 %>%
+    ggplot(., aes(elev_scaled*m$data$elev_sd[1]+m$data$elev_mean[1],
+                  exp(est),
+                  ymin = exp(est - 1.96 * est_se),
+                  ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+       ylim(0,7.2)+
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank()) +
+    xlab("Mean Elevation")
+
+gy1 <- gy1 +  theme(axis.title.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())
+ge1 <- ge1 +  theme(axis.title.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())
+gu1 <- gu1 +  theme(axis.title.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())
+gf1 <- gf1 +  theme(axis.title.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank())
+
+  gy1 + ge1 + gu1 + gf1 + 
+    gy2 + ge2 + gu2+ gf2 + patchwork::plot_layout(nrow = 2)
+```
+
+---
+
+<!-- Urban by time with BADO -->
+
+```{r , ffig.show="hold", out.width="60%"}
+par(mar=c(1,4,3,3))
+visreg2d_delta(m, "time_w_BADO", "urban", scale = "response", model = 1,
+               col = col_scheme,
+                 main = response_desc1,
+                 ylab = "Proportion urban",
+                 xlab = NULL
+)
+par(mar=c(4,4,3,3))
+visreg2d_delta(m, "time_w_BADO","urban",  scale = "response", model = 2,
+               col = col_scheme ,
+                 main = response_desc2,
+                 ylab = "Proportion urban",
+                 xlab = "Years since first Barred Owl"
+)
+```
+
+---
+
+# Main effects: *Observer effort*
+ 
+```{r effects1, fig.asp = 0.6, fig.width = 8}
+
+# conditional effect of NDist
+ndn <- expand.grid(
+  NDist_scaled = seq(min(m$data$NDist_scaled),
+                    quantile(m$data$NDist_scaled, .99)[[1]], length.out = 50),
+  Dist_scaled = 0,
+  FCounters_scaled = 0,
+  urban = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  year_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  BADO_count = 0,
+  BADO_scaled = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pn1 <- predict(m, newdata = ndn, se_fit = TRUE, re_form = NA)
+
+gn1 <- pn1 %>%
+    ggplot(., aes(exp(NDist_scaled*m$data$NDist_sd[1]+m$data$NDist_mean[1])-1,
+                  plogis(est),
+                  ymin = plogis(est - 1.96 * est_se),
+                  ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    ggsidekick::theme_sleek() +
+    # theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank()) +
+    ylab("Probability of presence") + xlab("Nocturnal distance (km)")
+
+
+
+# conditional effect of dist ###
+ndd <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = seq(min(m$data$Dist_scaled),
+              quantile(m$data$Dist_scaled, 0.99)[[1]], length.out = 50),
+  FCounters_scaled = 0,
+  year_scaled = 0,
+  elev_scaled = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  forest = 0,
+  urban = 0,
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  BADO_count = 0,
+  BADO_scaled = 0, BADO_scaled2 = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pd1 <- predict(m, newdata = ndd, se_fit = TRUE, re_form = NA)
+
+gd1 <- pd1 %>%
+    ggplot(., aes(
+      exp(Dist_scaled*m$data$Dist_sd[1]+m$data$Dist_mean[1])-1,
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se), ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    scale_colour_viridis_c()+
+    xlab("Distance (km)") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# conditional effect of observers ###
+ndc <- expand.grid(
+  NDist_scaled = 0,
+  Dist_scaled = 0,
+  FCounters_scaled = seq(min(m$data$FCounters_scaled),
+              quantile(m$data$FCounters_scaled, 0.99)[[1]], length.out = 50),
+  year_scaled = 0,
+  elev_scaled = 0,
+  forest = 0,
+  forest_scaled = 0,
+
+  time_w_BADO = 0,
+  time_w_BADO_scaled = 0,
+  log_GHOW = 0,
+  log_BADO = 0,
+  urban = 0,
+  year = m$data$year_median[1],
+  year_f = as.factor(m$data$year_median[1])
+)
+
+pc1 <- predict(m, newdata = ndc, se_fit = TRUE, re_form = NA)
+
+gc1 <- pc1 %>%
+    ggplot(., aes(
+      exp(FCounters_scaled*m$data$FCounters_sd[1]+m$data$FCounters_mean[1])-1,
+      plogis(est),
+      ymin = plogis(est - 1.96 * est_se), ymax = plogis(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+    ylim(0,1)+
+    scale_colour_viridis_c()+
+    xlab("Number of observers") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+
+#MODEL 2
+# conditional effect of NDist
+
+pn2 <- predict(m, newdata = ndn, se_fit = TRUE, re_form = NA, model = 2)
+
+gn2 <- pn2 %>%
+    ggplot(., aes(exp(NDist_scaled*m$data$NDist_sd[1]+m$data$NDist_mean[1])-1,
+                  exp(est),
+                  ymin = exp(est - 1.96 * est_se),
+                  ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+         ylim(0,7.2)+
+    ggsidekick::theme_sleek() +
+    # theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank()) +
+    ylab("Abundance when present") + xlab("Nocturnal distance (km)")
+
+
+
+# conditional effect of dist ###
+
+pd2 <- predict(m, newdata = ndd, se_fit = TRUE, re_form = NA, model = 2)
+
+gd2 <- pd2 %>%
+    ggplot(., aes(
+      exp(Dist_scaled*m$data$Dist_sd[1]+m$data$Dist_mean[1]),
+      exp(est),
+      ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +
+         ylim(0,7.2)+
+    scale_colour_viridis_c()+
+    xlab("Distance (km)") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+# conditional effect of Counters ###
+
+pc2 <- predict(m, newdata = ndc, se_fit = TRUE, re_form = NA, model = 2)
+
+gc2 <- pc2 %>%
+    ggplot(., aes(
+      exp(FCounters_scaled*m$data$FCounters_sd[1]+m$data$FCounters_mean[1])-1,
+      exp(est),
+      ymin = exp(est - 1.96 * est_se), ymax = exp(est + 1.96 * est_se)
+    )) +
+    geom_ribbon(alpha = 0.1, colour=NA) +
+    geom_line() +    
+     ylim(0,7.2)+
+    scale_colour_viridis_c()+
+    xlab("Number of observers") +
+    ggsidekick::theme_sleek() +
+    theme(axis.title.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank() )
+
+
+  gn1 + gd1 +  gc1 + 
+    gn2 + gd2 + gc2 + patchwork::plot_layout(nrow = 2)
+```
+
+---
+# Random (smoothed) spatial variation
+
+.center[
+<img src="images/WESO_omega_presence.png" width="350px" style="float:left"/>
+
+<img src="images/WESO_omega_abundance.png" width="350px"/>
+]
+
+---
+
+# Non-significant interactions
+
+* Weaker effects over the longer time-frame 
+  * Could be diluting original effect?
+  * Could be some recent BADO declines?
+
+* Could still prove worth exploring at a finer resolution
+
+
+```{r}
+m2 <-"data/WESO-delta-no-landcover-no-svc-fullish.rds"
+m2 <- readRDS(here::here(m2))
+```
+
+---
+
+```{r , fig.show="hold", out.width="60%"}
+par(mar=c(1,4,3,3))
+visreg2d_delta(m2, "log_BADO", "log_GHOW", scale = "response", model = 1,
+               col = col_scheme,
+                 main = response_desc1,
+                 ylab = "log(Great Horned Owl count +1)",
+                 xlab = NULL)
+
+par(mar=c(4,4,3,3))
+visreg2d_delta(m2, "log_BADO", "log_GHOW", scale = "response", model = 2,
+               col = col_scheme,
+                 main = response_desc2,
+                 ylab = "log(Great Horned Owl count +1)",
+                 xlab = "log(Barred Owl + 1)")
+```
+
+---
+
+```{r , fig.show="hold", out.width="60%"}
+m2 <-"data/WESO-delta-svc-time-full.rds"
+mf <- readRDS(here::here(m2))
+par(mar=c(1,4,3,3))
+visreg2d_delta(mf, "time_w_BADO", "log_GHOW", scale = "response", model = 1,
+               col = col_scheme,
+                 main = response_desc1,
+                 ylab = "log(Great Horned Owl count +1)",
+                 xlab = NULL)
+
+par(mar=c(4,4,3,3))
+visreg2d_delta(mf, "time_w_BADO", "log_GHOW", scale = "response", model = 2,
+               col = col_scheme,
+                 main = response_desc2,
+                 ylab = "log(Great Horned Owl count +1)",
+                 xlab = "Years since first Barred Owl")
+```
+
+---
+
+```{r , fig.show="hold", out.width="60%"}
+m2 <-"data/WESO-delta-svc-time-full.rds"
+mf <- readRDS(here::here(m2))
+par(mar=c(1,4,3,3))
+visreg2d_delta(mf, "time_w_BADO", "forest", scale = "response", model = 1,
+               col = col_scheme ,
+               main = response_desc1 ,
+                 ylab = "Proportion forest",
+                 xlab = "Years since first Barred Owl")
+
+par(mar=c(4,4,3,3))
+visreg2d_delta(mf, "time_w_BADO", "forest", scale = "response", model = 2,
+               col = col_scheme ,
+               main = response_desc2 ,
+                 ylab = "Proportion forest",
+                 xlab = "Years since first Barred Owl")
+```
+
+---
+
+# Caveats
+
+* Very coarse resolution (~ 490 km2)
+
+* Limited Canadian coverage
+  * Insufficient data north of the lower mainland and southern Vancouver Island
+
+* Tells us nothing about remote, old growth, and bog habitats that are likely strong-holds 
+
+* Barred Owl populations starting to decline in some areas--could limit strength of effect of current counts
+
+* Model assumes random/unexplained spatiotemporal changes are linear, so might not detect recovery
+  
+---
+
+background-image: url("images/EASO2.jpeg")
+background-position: bottom 50px left 100px
+background-size: 80%
+
+# Implications/Future directions 
+
+* Effects aren't instantaneous--beware that co-occurrence may be temporary
+
+* Are Great Horned Owls protective or do they simply represent an indication of better habitats?
+
+* What habitats best provide refuges?
+
